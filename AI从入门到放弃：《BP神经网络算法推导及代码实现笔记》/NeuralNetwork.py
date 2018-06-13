@@ -1,5 +1,4 @@
 #coding:utf-8
-import h5py
 import sklearn.datasets
 import sklearn.linear_model
 import matplotlib
@@ -133,6 +132,10 @@ def activated_back_propagation(activation_choose, derror_wrt_output, output):
     return sigmoid_back_propagation(derror_wrt_output, output)
 
 class NeuralNetwork:
+    """
+    神经网络
+    支持深度网络，例如，设计一个5层网络，则layers_strcuture=[2,10,7,5,2]
+    """
     def __init__(self, layers_strcuture, print_cost = False):
         self.layers_strcuture = layers_strcuture
         self.layers_num = len(layers_strcuture)
@@ -234,7 +237,7 @@ class NeuralNetwork:
         for l in range(1, L):
             # 当前网络层的输入来自前一层的输出
             input_cur = output_prev
-            output_prev, cache = self.layer_activation_forward(input_cur, self.w["w"+ str(l)], self.b["b" + str(l)], "tanh")
+            output_prev, cache = self.layer_activation_forward(input_cur, self.w["w"+ str(l)], self.b["b" + str(l)], "relu")
             caches.append(cache)
 
         output, cache = self.layer_activation_forward(output_prev, self.w["w" + str(L)], self.b["b" + str(L)], "sigmoid")
@@ -335,7 +338,7 @@ class NeuralNetwork:
         for l in reversed(range(L - 1)):
             current_cache = caches[l]
             derror_wrt_output_prev_temp, derror_wrt_dw_temp, derror_wrt_db_temp = \
-                self.layer_activation_backward(grads["derror_wrt_output" + str(l + 2)], current_cache, "tanh")
+                self.layer_activation_backward(grads["derror_wrt_output" + str(l + 2)], current_cache, "relu")
 
             grads["derror_wrt_output" + str(l + 1)] = derror_wrt_output_prev_temp
             grads["derror_wrt_dw" + str(l + 1)] = derror_wrt_dw_temp
@@ -357,7 +360,7 @@ class NeuralNetwork:
             self.w["w" + str(l + 1)] = self.w["w" + str(l + 1)] - self.learning_rate * grads["derror_wrt_dw" + str(l + 1)]
             self.b["b" + str(l + 1)] = self.b["b" + str(l + 1)] - self.learning_rate * grads["derror_wrt_db" + str(l + 1)]
 
-    def tarin_modle(self):
+    def training_modle(self):
         """训练神经网络模型"""
 
         np.random.seed(5)
@@ -375,9 +378,9 @@ class NeuralNetwork:
             self.update_w_and_b(grads)
 
             # 当次迭代结束，打印误差信息
-            if self.print_cost and i % 1000 == 0:
+            if self.print_cost and i % 100 == 0:
                 print ("Cost after iteration %i: %f" % (i, cost))
-            if self.print_cost and i % 1000 == 0:
+            if self.print_cost and i % 100 == 0:
                 self.costs.append(cost)
 
         # 模型训练完后显示误差曲线
@@ -396,6 +399,7 @@ class NeuralNetwork:
         output = output.T
         result = output / np.sum(output, axis=1, keepdims=True)
         return np.argmax(result, axis=1)
+
 
 def plot_decision_boundary(xy, colors, pred_func):
     # xy是坐标点的集合，把集合的范围算出来
@@ -426,14 +430,14 @@ if __name__ == "__main__":
 
     # 因为点的颜色是1bit，我们设计一个神经网络，输出层有2个神经元。
     # 标定输出[1,0]为红色点，输出[0,1]为蓝色点
-    expect_output = []
+    expect_outputed = []
     for c in colors:
         if c == 1:
-            expect_output.append([0,1])
+            expect_outputed.append([0,1])
         else:
-            expect_output.append([1,0])
+            expect_outputed.append([1,0])
 
-    expect_output = np.array(expect_output).T
+        expect_outputed = np.array(expect_outputed).T
 
     # 设计3层网络，改变隐藏层神经元的个数，观察神经网络分类红蓝点的效果
     hidden_layer_neuron_num_list = [1,2,4,10,20,50]
@@ -444,10 +448,10 @@ if __name__ == "__main__":
         nn = NeuralNetwork([2, hidden_layer_neuron_num, 2], True)
 
         # 输出和输入层都是2个节点，所以输入和输出的数据集合都要是 nx2的矩阵
-        nn.set_xy(xy.T, expect_output)
-        nn.set_num_iterations(30000)
+        nn.set_xy(xy.T, expect_outputed)
+        nn.set_num_iterations(25000)
         nn.set_learning_rate(0.1)
-        w, b = nn.tarin_modle()
+        w, b = nn.training_modle()
         plot_decision_boundary(xy, colors, nn.predict_by_modle)
 
     plt.show()
